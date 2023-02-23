@@ -16,9 +16,8 @@ extern crate alloc;
 extern crate log;
 
 use alloc::boxed::Box;
-use alloc::vec::Vec;
 use core::arch::asm;
-use rboot::{BootInfo, GraphicInfo};
+use rboot::{BootInfo, GraphicInfo, MemoryMap};
 use uefi::proto::console::gop::GraphicsOutput;
 use uefi::proto::media::file::*;
 use uefi::proto::media::fs::SimpleFileSystem;
@@ -126,20 +125,8 @@ fn efi_main(image: uefi::Handle, mut st: SystemTable<Boot>) -> Status {
 
     info!("exit boot services");
 
-    let mut memory_map = Vec::with_capacity(128);
-
-    let (_rt, mmap_iter) = st
-        .exit_boot_services(image, mmap_storage)
-        .expect("Failed to exit boot services");
-    // NOTE: alloc & log can no longer be used
-
-    for desc in mmap_iter {
-        memory_map.push(desc);
-    }
-
-    // construct BootInfo
-    let bootinfo = BootInfo {
-        memory_map,
+    let mut bootinfo = BootInfo {
+        memory_map: MemoryMap::new(),
         physical_memory_offset: config.physical_memory_offset,
         graphic_info,
         acpi2_rsdp_addr: acpi2_addr as u64,
@@ -148,6 +135,16 @@ fn efi_main(image: uefi::Handle, mut st: SystemTable<Boot>) -> Status {
         initramfs_size,
         cmdline: config.cmdline,
     };
+
+    let (_rt, mmap_iter) = st
+        .exit_boot_services(image, mmap_storage)
+        .expect("Failed to exit boot services");
+    // NOTE: alloc & log can no longer be used
+
+    for desc in mmap_iter {
+        bootinfo.memory_map.add_region(*desc);
+    }
+
     let stacktop = config.kernel_stack_address + config.kernel_stack_size * 0x1000;
     unsafe {
         jump_to_entry(&bootinfo, stacktop);

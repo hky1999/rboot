@@ -3,15 +3,19 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+// use alloc::vec::Vec;
 pub use uefi::proto::console::gop::ModeInfo;
 pub use uefi::table::boot::{MemoryAttribute, MemoryDescriptor, MemoryType};
+
+mod memory_map;
+
+pub use memory_map::MemoryMap;
 
 /// This structure represents the information that the bootloader passes to the kernel.
 #[repr(C)]
 #[derive(Debug)]
 pub struct BootInfo {
-    pub memory_map: Vec<&'static MemoryDescriptor>,
+    pub memory_map: MemoryMap,
     /// The offset into the virtual address space where the physical memory is mapped.
     pub physical_memory_offset: u64,
     /// The graphic output information

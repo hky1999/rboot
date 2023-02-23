@@ -53,7 +53,7 @@ fn map_segment(
     if segment.get_type().unwrap() != program::Type::Load {
         return Ok(());
     }
-    debug!("mapping segment: {:#x?}", segment);
+    // debug!("mapping segment: {:#x?}", segment);
     let mem_size = segment.mem_size();
     let file_size = segment.file_size();
     let file_offset = segment.offset() & !0xfff;
@@ -160,6 +160,8 @@ pub fn map_physical_memory(
     info!("mapping physical memory");
     let start_frame = PhysFrame::containing_address(PhysAddr::new(0));
     let end_frame = PhysFrame::containing_address(PhysAddr::new(max_addr));
+    info!("mapping physical memory, start frame {:#?}", start_frame);
+    info!("mapping physical memory, end frame {:#?}", end_frame);
     for frame in PhysFrame::range_inclusive(start_frame, end_frame) {
         let page = Page::containing_address(VirtAddr::new(frame.start_address().as_u64() + offset));
         let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
